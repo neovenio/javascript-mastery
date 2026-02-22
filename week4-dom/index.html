@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>To-Do List</title>
+    <link rel="stylesheet" href="style.css">
+
+</head>
+<body>
+    <div class="todo-container">
+        <h1>My Todos</h1>
+        <div class="input-group">
+            <input type="text" id="todoInput" placeholder="Write a to-do ...">
+            <button class="btn btn-primary" id="addBtn">+ Add</button>
+        </div>
+        <div class="stats">
+            <span id="totalCount">0 total</span>
+            <span id="completedCount">0 done</span>
+        </div>
+        <ul class="todo-list" id="todoListContainer"></ul>
+        <div class="footer-actions">
+            <button class="clear-all-btn" id="clearAllBtn">Clear all</button>
+        </div>
+    </div>
+
+    <script>
+        let todos = [];
+        const STORAGE_KEY = 'todos';
+        const saved = localStorage.getItem(STORAGE_KEY);
+        if (saved) {
+            try {
+                todos = JSON.parse(saved);
+            } catch (e) {
+                todos = [];
+            }
+        }
+
+        const todoInput = document.getElementById('todoInput');
+        const addBtn = document.getElementById('addBtn');
+        const clearAllBtn = document.getElementById('clearAllBtn');
+        const todoListContainer = document.getElementById('todoListContainer');
+        const totalSpan = document.getElementById('totalCount');
+        const completedSpan = document.getElementById('completedCount');
+
+        function saveToLocalStorage() {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(todos));
+        }
+
+        function render() {
+            todoListContainer.innerHTML = '';
+            const total = todos.length;
+            const completed = todos.filter(t => t.completed).length;
+            totalSpan.textContent = total + ' total';
+            completedSpan.textContent = completed + ' done';
+
+            if (total === 0) {
+                const emptyLi = document.createElement('li');
+                emptyLi.className = 'empty-message';
+                emptyLi.textContent = 'Add your first to-dos';
+                todoListContainer.appendChild(emptyLi);
+            } else {
+                for (let i = 0; i < todos.length; i++) {
+                    const todo = todos[i];
+                    const li = document.createElement('li');
+                    if (todo.completed) {
+                        li.classList.add('completed');
+                    }
+
+                    const checkbox = document.createElement('input');
+                    checkbox.type = 'checkbox';
+                    checkbox.checked = todo.completed;
+                    checkbox.onchange = function() {
+                        todo.completed = checkbox.checked;
+                        saveToLocalStorage();
+                        render();
+                    };
+
+                    const span = document.createElement('span');
+                    span.className = 'todo-text';
+                    span.textContent = todo.text;
+
+                    const deleteBtn = document.createElement('button');
+                    deleteBtn.className = 'delete-btn';
+                    deleteBtn.innerHTML = '✕';
+                    deleteBtn.onclick = function() {
+                        todos.splice(i, 1);
+                        saveToLocalStorage();
+                        render();
+                    };
+
+                    li.appendChild(checkbox);
+                    li.appendChild(span);
+                    li.appendChild(deleteBtn);
+                    todoListContainer.appendChild(li);
+                }
+            }
+            saveToLocalStorage();
+        }
+
+        function addTodo() {
+            const text = todoInput.value.trim();
+            if (text === '') {
+                alert('Please write something');
+                return;
+            }
+            todos.push({ text: text, completed: false });
+            todoInput.value = '';
+            todoInput.focus();
+            render();
+        }
+
+        addBtn.addEventListener('click', addTodo);
+        todoInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                addTodo();
+            }
+        });
+
+        clearAllBtn.addEventListener('click', function() {
+            if (todos.length === 0) return;
+            if (confirm('Delete all tasks?')) {
+                // todos = [];
+                localStorage.clear(todos);
+                render();
+            }
+        });
+
+        render();
+    </script>
+</body>
+</html>
